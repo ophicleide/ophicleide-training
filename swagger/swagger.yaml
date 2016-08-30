@@ -1,0 +1,397 @@
+---
+swagger: "2.0"
+info:
+  description: "The REST API for the Ophicleide Word2Vec server"
+  version: "0.0.0"
+  title: "Ophicleide REST Server"
+consumes:
+- "application/json"
+produces:
+- "application/json"
+paths:
+  /:
+    get:
+      tags:
+      - "server"
+      description: "Returns information about the server version"
+      operationId: "controllers.default_controller.get_server_info"
+      parameters: []
+      responses:
+        200:
+          description: "Valid server info response"
+          schema:
+            $ref: "#/definitions/ServerInfo"
+          examples:
+            application/json:
+              application:
+                name: "ophicleide-rest-server"
+                version: "0.0.0"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      x-tags:
+      - tag: "server"
+  /models:
+    get:
+      tags:
+      - "models"
+      description: "Returns a list of the models that have been, or are being, trained\n\
+        by the processing driver"
+      operationId: "controllers.default_controller.get_training_models"
+      parameters: []
+      responses:
+        200:
+          description: "Valid list of models response"
+          schema:
+            $ref: "#/definitions/inline_response_200"
+          examples:
+            application/json:
+              models:
+              - id: "0ebf527c-9c54-43f3-89b5-abbc89b2f43b"
+                name: "austen"
+                status: "ready"
+                callback: "http://10.0.1.2/model-callback"
+                urls:
+                - "https://ia600504.us.archive.org/25/items/thecompleteproje31100gut/31100.txt"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      x-tags:
+      - tag: "models"
+    post:
+      tags:
+      - "models"
+      description: "Start a new model training from the corpus specified"
+      operationId: "controllers.default_controller.create_training_model"
+      parameters:
+      - in: "body"
+        name: "trainingModel"
+        description: "The model training to begin"
+        required: true
+        schema:
+          $ref: "#/definitions/NewTrainingModel"
+      responses:
+        201:
+          description: "Model training start response"
+          schema:
+            $ref: "#/definitions/inline_response_201"
+          examples:
+            application/json:
+              model:
+                id: "0ebf527c-9c54-43f3-89b5-abbc89b2f43b"
+                name: "austen"
+                status: "training"
+                callback: "http://10.0.1.2/model-callback"
+                urls:
+                - "https://ia600504.us.archive.org/25/items/thecompleteproje31100gut/31100.txt"
+          headers:
+            Location:
+              type: "string"
+              description: "URL of the training model"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      x-tags:
+      - tag: "models"
+  /models/{id}:
+    get:
+      tags:
+      - "models"
+      description: "Return detailed information about a training model"
+      operationId: "controllers.default_controller.find_training_model"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The unique identifier for the training model"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Training model detail response"
+          schema:
+            $ref: "#/definitions/inline_response_201"
+          examples:
+            application/json:
+              model:
+                id: "0ebf527c-9c54-43f3-89b5-abbc89b2f43b"
+                name: "austen"
+                status: "ready"
+                callback: "http://10.0.1.2/model-callback"
+                urls:
+                - "https://ia600504.us.archive.org/25/items/thecompleteproje31100gut/31100.txt"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      x-tags:
+      - tag: "models"
+    delete:
+      tags:
+      - "models"
+      description: "Delete the specified training model"
+      operationId: "controllers.default_controller.delete_training_model"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The unique identifier for the training model"
+        required: true
+        type: "string"
+      responses:
+        204:
+          description: "Training model deletion response"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      x-tags:
+      - tag: "models"
+  /queries:
+    get:
+      tags:
+      - "queries"
+      description: "Return a list of queries submitted to the server"
+      operationId: "controllers.default_controller.get_queries"
+      parameters: []
+      responses:
+        200:
+          description: "Valid list of queries response"
+          schema:
+            $ref: "#/definitions/inline_response_200_1"
+          examples:
+            application/json:
+              queries:
+              - id: "214b0c0c-8d1c-4782-b590-512a915251b9"
+                word: "darcy"
+                model: "0ebf527c-9c54-43f3-89b5-abbc89b2f43b"
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      x-tags:
+      - tag: "queries"
+    post:
+      tags:
+      - "queries"
+      description: "Create a new query"
+      operationId: "controllers.default_controller.create_query"
+      parameters:
+      - in: "body"
+        name: "newQuery"
+        description: "The query to execute"
+        required: true
+        schema:
+          $ref: "#/definitions/NewQueryRequest"
+      responses:
+        201:
+          description: "Valid new query response"
+          schema:
+            $ref: "#/definitions/inline_response_201_1"
+          examples:
+            application/json:
+              query:
+                id: "214b0c0c-8d1c-4782-b590-512a915251b9"
+                word: "darcy"
+                model: "0ebf527c-9c54-43f3-89b5-abbc89b2f43b"
+                results:
+                - word: "collins"
+                  quality: 0.9056707521507696423412880903924815356731414794921875
+                - word: "wickham"
+                  quality: 0.8819405921767342615424922769307158887386322021484375
+                - word: "bingley"
+                  quality: 0.8586231777810209297996379973483271896839141845703125
+                - word: "willoughby"
+                  quality: 0.78576338532794698377159647861844860017299652099609375
+                - word: "denny"
+                  quality: 0.78273216128663947177557247414370067417621612548828125
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      x-tags:
+      - tag: "queries"
+  /queries/{id}:
+    get:
+      tags:
+      - "queries"
+      description: "Return detailed information for the specified query"
+      operationId: "controllers.default_controller.find_query"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "The unique identifier for the query"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Valid query detailed response"
+          examples:
+            application/json:
+              query:
+                id: "214b0c0c-8d1c-4782-b590-512a915251b9"
+                word: "darcy"
+                model: "0ebf527c-9c54-43f3-89b5-abbc89b2f43b"
+                results:
+                - word: "collins"
+                  quality: 0.9056707521507696423412880903924815356731414794921875
+                - word: "wickham"
+                  quality: 0.8819405921767342615424922769307158887386322021484375
+                - word: "bingley"
+                  quality: 0.8586231777810209297996379973483271896839141845703125
+                - word: "willoughby"
+                  quality: 0.78576338532794698377159647861844860017299652099609375
+                - word: "denny"
+                  quality: 0.78273216128663947177557247414370067417621612548828125
+        default:
+          description: "Unexpected error"
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      x-tags:
+      - tag: "queries"
+definitions:
+  SingleError:
+    required:
+    - "details"
+    - "status"
+    - "title"
+    properties:
+      status:
+        type: "integer"
+        format: "int32"
+        description: "HTTP status code"
+      title:
+        type: "string"
+        description: "A brief summary of the error, this should remain consistent\n\
+          between errors of the same class"
+      details:
+        type: "string"
+        description: "An explanation of the specific error that has occurred"
+    description: "A single error generated by the server"
+  ErrorResponse:
+    required:
+    - "errors"
+    properties:
+      errors:
+        type: "array"
+        description: "List of errors returned"
+        items:
+          $ref: "#/definitions/SingleError"
+    description: "A list of errors to be returned in an HTTP response"
+  ServerInfo:
+    properties:
+      application:
+        $ref: "#/definitions/ServerInfo_application"
+    description: "General information about the server application"
+  NewTrainingModel:
+    required:
+    - "callback"
+    - "name"
+    - "urls"
+    properties:
+      name:
+        type: "string"
+        description: "The name of this model"
+      callback:
+        type: "string"
+        description: "A URL that the server can POST to when the training is complete"
+      urls:
+        type: "array"
+        description: "A list of the URLs to use for training the model"
+        items:
+          type: "string"
+    description: "Required parameters for creating a new training model"
+  TrainingModel:
+    allOf:
+    - $ref: "#/definitions/NewTrainingModel"
+    - required:
+      - "id"
+      - "status"
+      properties:
+        id:
+          type: "string"
+          description: "Unique identifier for this model"
+        status:
+          type: "string"
+          description: "The current state of this model; ready, training, etc."
+    description: "Detailed information about a training model"
+  QueryResponse:
+    required:
+    - "id"
+    - "results"
+    properties:
+      id:
+        type: "string"
+        description: "Unique identifier for this query response"
+      word:
+        type: "string"
+        description: "The word the query was run against"
+      model:
+        type: "string"
+        description: "The unique identifier for the model used to generate this query"
+      results:
+        type: "array"
+        description: "List of words, with quality values, that match the query"
+        items:
+          $ref: "#/definitions/QueryResponse_results"
+    description: "Detailed information about a query"
+  NewQueryRequest:
+    required:
+    - "model"
+    - "word"
+    properties:
+      word:
+        type: "string"
+        description: "The word to run the query against"
+      model:
+        type: "string"
+        description: "The unique identifier for the training model to use in the query"
+    description: "A request to create a new query"
+  inline_response_200:
+    properties:
+      models:
+        type: "array"
+        items:
+          $ref: "#/definitions/TrainingModel"
+  inline_response_201:
+    properties:
+      model:
+        type: "object"
+        properties: {}
+  inline_response_200_1_queries:
+    required:
+    - "id"
+    properties:
+      id:
+        type: "string"
+        description: "The unique identifier for the query"
+  inline_response_200_1:
+    properties:
+      queries:
+        type: "array"
+        items:
+          $ref: "#/definitions/inline_response_200_1_queries"
+  inline_response_201_1:
+    properties:
+      query:
+        type: "object"
+        properties: {}
+  ServerInfo_application:
+    required:
+    - "name"
+    - "version"
+    properties:
+      name:
+        type: "string"
+        description: "Application name"
+      version:
+        type: "string"
+        description: "Application version"
+  QueryResponse_results:
+    required:
+    - "word"
+    properties:
+      word:
+        type: "string"
+        description: "The word matching the query"
