@@ -11,7 +11,7 @@ def create_training_model(trainingModel) -> str:
             "name": trainingModel["name"] }
     options()["train_queue"].put(job)
     print(repr(trainingModel))
-    return 'do some magic!'
+    return jsonify(job)
 
 
 def delete_training_model(id) -> str:

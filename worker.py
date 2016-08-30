@@ -8,6 +8,8 @@ from urllib.request import urlopen
 
 from functools import reduce
 
+from pickle import dumps as pds
+
 import pymongo
 
 def cleanstr(s):
@@ -47,7 +49,11 @@ def workloop(master, inq, outq, dburl):
         mid = req["uuid"]
         model = train(sc, urls)
 
+        mdict = {}
+        for word in model.getVectors().keys():
+            mdict[word] = list(model.transform(word))
+                
         if dburl is not None:
-            db.models.insert_one({"model": model.getVectors(), "uuid": mid,
+            db.models.insert_one({"model": mdict, "uuid": mid,
                                   "name": name, "urls": urls})
-        outq.put((mid, name, model))
+        outq.put((mid, name, mdict))
