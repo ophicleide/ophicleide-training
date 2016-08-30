@@ -4,6 +4,7 @@ from pyspark.mllib.feature import Word2Vec
 
 from urllib.request import urlopen
 
+
 def cleanstr(s):
     noPunct = re.sub("[^a-z ]", " ", s.lower())
     collapsedWhitespace = re.sub("(^ )|( $)", "", re.sub("  *", " ", noPunct))
