@@ -25,4 +25,5 @@ def get_queries() -> str:
     return 'do some magic!'
 
 def get_server_info() -> str:
-    return jsonify(name="ophicleide", version="0.0.0")
+    tqlen = (options()["train_queue"]).qsize()
+    return jsonify(name="ophicleide", version="0.0.0", info={"training_queue_len" : tqlen})
