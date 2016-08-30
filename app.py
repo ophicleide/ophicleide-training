@@ -15,21 +15,22 @@ def options():
 
 
 if __name__ == '__main__':
-    train_queue = Queue()
-    result_queue = Queue()
+    train_q = Queue()
+    result_q = Queue()
 
     master = "local[*]"
-
+    dburl = "mongodb://localhost"
+    
     options()["spark_master"] = master
+    options()["db_url"] = dburl
+    options()["train_queue"] = train_q
+    options()["result_queue"] = result_q
 
-    options()["train_queue"] = train_queue
-    options()["result_queue"] = result_queue
-
-    p = Process(target=workloop, args=(master, train_queue, result_queue))
+    p = Process(target=workloop, args=(master, train_q, result_q, dburl))
     p.start()
 
     # wait for worker to spin up
-    result_queue.get()
+    result_q.get()
 
     app = connexion.App(__name__, specification_dir='./swagger/')
     app.add_api('swagger.yaml',
