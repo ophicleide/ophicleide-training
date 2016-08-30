@@ -14,8 +14,10 @@ def options():
 if __name__ == '__main__':
     train_queue = Queue()
     result_queue = Queue()
+
+    master = "local[*]"
     
-    options()["spark_master"] = "local[*]"
+    options()["spark_master"] = master
     
     options()["train_queue"] = train_queue
     options()["result_queue"] = result_queue
