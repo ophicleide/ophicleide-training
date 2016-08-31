@@ -19,10 +19,9 @@ def create_training_model(trainingModel) -> str:
             "callback": trainingModel["callback"] }
     (model_collection()).insert_one(job)
     options()["train_queue"].put(job)
-    
-    result = jsonify(job)
+    url = url_for(".controllers_default_controller_find_training_model", id=job["_id"])
 
-    return result
+    return(redirect(url))
 
 
 def delete_training_model(id) -> str:
