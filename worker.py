@@ -52,7 +52,9 @@ def workloop(master, inq, outq, dburl):
         mdict = {}
         for word in model.getVectors().keys():
             mdict[word] = list(model.transform(word))
-                
+
+        # XXX: do something with callback here
+        
         if dburl is not None:
             db.models.update_one({"_id": mid}, {"$set": {"status": "ready", "model": mdict}, "$currentDate": {"last_updated": True}})
 
