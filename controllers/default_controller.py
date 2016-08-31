@@ -1,9 +1,10 @@
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 from flask import request, render_template, url_for, make_response
 from flask.json import jsonify
 
 import pymongo
+from bson.objectid import ObjectId
 
 from __main__ import options
 
@@ -29,8 +30,12 @@ def delete_training_model(id) -> str:
 
 
 def find_training_model(id) -> str:
-    return 'do some magic!'
-
+    model = model_collection().find_one({"_id": UUID(id)})
+    if model is None:
+        return make_response(("can't find model with ID %r" % id, 404, []))
+    else:
+        result = dict([(k,model[k]) for k in ["_id", "name", "urls", "status"]])
+        return jsonify(result)
 
 def get_training_models() -> str:
     models = model_collection().find()
