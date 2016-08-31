@@ -3,14 +3,21 @@ from uuid import uuid4
 from flask import request, render_template, url_for, make_response
 from flask.json import jsonify
 
+import pymongo
+
 from __main__ import options
+
+def model_collection():
+    dburl = options()["db_url"]
+    return pymongo.MongoClient(dburl).ophicleide.models
 
 
 def create_training_model(trainingModel) -> str:
-    job = { "urls": trainingModel["urls"], "uuid": uuid4(),
-            "name": trainingModel["name"] }
+    job = { "urls": trainingModel["urls"], "_id": uuid4(),
+            "name": trainingModel["name"], "status": "training" }
+    (model_collection()).insert_one(job)
     options()["train_queue"].put(job)
-    print(repr(trainingModel))
+    
     return jsonify(job)
 
 

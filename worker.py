@@ -43,10 +43,10 @@ def workloop(master, inq, outq, dburl):
     outq.put("ready")
 
     while True:
-        req = inq.get()
-        urls = req["urls"]
-        name = req["name"]
-        mid = req["uuid"]
+        job = inq.get()
+        urls = job["urls"]
+        name = job["name"]
+        mid = job["_id"]
         model = train(sc, urls)
 
         mdict = {}
@@ -54,6 +54,6 @@ def workloop(master, inq, outq, dburl):
             mdict[word] = list(model.transform(word))
                 
         if dburl is not None:
-            db.models.insert_one({"model": mdict, "uuid": mid,
-                                  "name": name, "urls": urls})
-        outq.put((mid, name, mdict))
+            db.models.update_one({"_id": mid}, {"$set": {"status": "ready", "model": mdict}, "$currentDate": {"last_updated": True}})
+
+        outq.put((mid, name))
