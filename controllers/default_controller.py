@@ -14,11 +14,14 @@ def model_collection():
 
 def create_training_model(trainingModel) -> str:
     job = { "urls": trainingModel["urls"], "_id": uuid4(),
-            "name": trainingModel["name"], "status": "training" }
+            "name": trainingModel["name"], "status": "training",
+            "callback": trainingModel["callback"] }
     (model_collection()).insert_one(job)
     options()["train_queue"].put(job)
     
-    return jsonify(job)
+    result = jsonify(job)
+
+    return result
 
 
 def delete_training_model(id) -> str:
@@ -30,7 +33,9 @@ def find_training_model(id) -> str:
 
 
 def get_training_models() -> str:
-    return 'do some magic!'
+    models = model_collection().find()
+    result = [dict([(k,m[k]) for k in ["_id", "name", "urls", "status"]]) for m in models]
+    return jsonify(result)
 
 
 def create_query(newQuery) -> str:
