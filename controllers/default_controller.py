@@ -1,6 +1,6 @@
 from uuid import uuid4, UUID
 
-from flask import request, render_template, url_for, make_response
+from flask import request, render_template, url_for, make_response, redirect
 from flask.json import jsonify
 
 import pymongo
@@ -26,7 +26,8 @@ def create_training_model(trainingModel) -> str:
 
 
 def delete_training_model(id) -> str:
-    return 'do some magic!'
+    model_collection().delete_one({"_id": UUID(id)})
+    return(redirect(url_for(".controllers_default_controller_get_training_models")))
 
 
 def find_training_model(id) -> str:
