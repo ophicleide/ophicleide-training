@@ -45,17 +45,14 @@ def workloop(master, inq, outq, dburl):
     while True:
         job = inq.get()
         urls = job["urls"]
-        name = job["name"]
         mid = job["_id"]
         model = train(sc, urls)
 
-        mdict = {}
-        for word in model.getVectors().keys():
-            mdict[word] = list(model.transform(word))
+        words, vecs = zip(*[(w, list(v)) for w, v in model.getVectors().items()])
 
         # XXX: do something with callback here
         
         if dburl is not None:
-            db.models.update_one({"_id": mid}, {"$set": {"status": "ready", "model": mdict}, "$currentDate": {"last_updated": True}})
+            db.models.update_one({"_id": mid}, {"$set": {"status": "ready", "model": {"words": list(words), "vecs": list(vecs)}}, "$currentDate": {"last_updated": True}})
 
         outq.put((mid, name))
