@@ -8,9 +8,12 @@ from urllib.request import urlopen
 
 from functools import reduce
 
-from pickle import dumps as pds
-
 import pymongo
+
+import zlib
+
+from numpy import ndarray
+
 
 def cleanstr(s):
     noPunct = re.sub("[^a-z ]", " ", s.lower())
@@ -51,8 +54,17 @@ def workloop(master, inq, outq, dburl):
         words, vecs = zip(*[(w, list(v)) for w, v in model.getVectors().items()])
 
         # XXX: do something with callback here
-        
-        if dburl is not None:
-            db.models.update_one({"_id": mid}, {"$set": {"status": "ready", "model": {"words": list(words), "vecs": list(vecs)}}, "$currentDate": {"last_updated": True}})
 
-        outq.put((mid, name))
+        if dburl is not None:
+            ndvecs = ndarray([len(words), len(vecs[0])])
+            for i in range(len(vecs)):
+                ndvecs[i] = vecs[i]
+
+            ns = ndvecs.dumps()
+            zns = zlib.compress(ns, 9)
+
+            print("len(ns) == %d; len(zns) == %d" % (len(ns), len(zns)))
+            
+            db.models.update_one({"_id": mid}, {"$set": {"status": "ready", "model": {"words": list(words), "zndvecs": zns}}, "$currentDate": {"last_updated": True}})
+
+        outq.put((mid, job["name"]))
