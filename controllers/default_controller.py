@@ -6,12 +6,40 @@ from flask.json import jsonify
 import pymongo
 from bson.objectid import ObjectId
 
+from numpy import ndarray
+from numpy.linalg import norm
+from pickle import loads as pls
+import zlib
+
 from __main__ import options
+
+mc = {}
 
 def model_collection():
     dburl = options()["db_url"]
     return pymongo.MongoClient(dburl).ophicleide.models
 
+def query_collection():
+    dburl = options()["db_url"]
+    return pymongo.MongoClient(dburl).ophicleide.queries
+
+
+def model_cache_find(mid):
+    global mc
+    if mid in mc:
+        return mc[mid]
+    else:
+        model = model_collection().find_one({"_id": UUID(mid), "status": "ready"})
+        if model is None:
+            return None
+        else:
+            vecs = pls(zlib.decompress(model["zndvecs"]))
+            norms = ndarray([norm(v) for v in vecs])
+            
+            cached = {"name": model["name"], "words": dict(zip(model["words"], range(len(model["words"])))), "indices": model["words"], "vecs": vecs, "norms": norms}
+            mc[mid] = cached
+            return cached
+            
 
 def create_training_model(trainingModel) -> str:
     job = { "urls": trainingModel["urls"], "_id": uuid4(),
@@ -37,6 +65,7 @@ def find_training_model(id) -> str:
         result = dict([(k,model[k]) for k in ["_id", "name", "urls", "status"]])
         return jsonify(result)
 
+
 def get_training_models() -> str:
     models = model_collection().find()
     result = [dict([(k,m[k]) for k in ["_id", "name", "urls", "status"]]) for m in models]
@@ -44,7 +73,14 @@ def get_training_models() -> str:
 
 
 def create_query(newQuery) -> str:
-    return 'do some magic!'
+    mid = newQuery["model"]
+    word = newQuery["word"]
+    model = model_cache_find(mid)
+    if model is None:
+        return make_response(("no trained model with ID %r available; check /models to see when one is ready" % mid, 404, []))
+    else:
+        # XXX
+        return 'XXX do some magic'
 
 
 def find_query(id) -> str:
