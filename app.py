@@ -4,6 +4,7 @@ import connexion
 from multiprocessing import Process, Queue
 
 from worker import workloop
+from os import environ
 
 
 optionsDict = {}
@@ -18,8 +19,8 @@ if __name__ == '__main__':
     train_q = Queue()
     result_q = Queue()
 
-    master = "local[*]"
-    dburl = "mongodb://localhost"
+    master = environ.get("OPH_MASTER", "local[*]")
+    dburl = environ.get("OPH_DBURL", "mongodb://localhost")
 
     options()["spark_master"] = master
     options()["db_url"] = dburl
