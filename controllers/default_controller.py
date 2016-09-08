@@ -17,35 +17,40 @@ from __main__ import options
 
 mc = {}
 
+
 class LocalW2VModel(object):
     def __init__(self, ws, vs):
         self.words = ws
         self.indices = dict(zip(ws, range(len(ws))))
         self.mat = vs
         self.norms = array([norm(v) for v in vs])
-        
+
     def hasWord(self, word):
-        return self.indices.has_key(word)
-    
+        return word in self.indices
+
     def findSynonyms(self, word_or_vec, count):
         if type(word_or_vec) is str:
             vec = self.mat[self.indices[word_or_vec]]
         else:
             vec = word_or_vec
-            
+
         vnorm = norm(vec)
         if vnorm != 0.0:
             vec = vec * (1 / vnorm)
-        
+
         simvec = (matmul(self.mat, vec) / self.norms)
         similarities = list(zip(simvec, self.words))
         heapq.heapify(similarities)
-        
-        return [(s, w) for s, w in heapq.nlargest(count + 1, similarities) if w != word_or_vec][:count]
+
+        return [(s, w)
+                for s, w in heapq.nlargest(count + 1, similarities)
+                if w != word_or_vec][:count]
+
 
 def model_collection():
     dburl = options()["db_url"]
     return pymongo.MongoClient(dburl).ophicleide.models
+
 
 def query_collection():
     dburl = options()["db_url"]
@@ -57,7 +62,8 @@ def model_cache_find(mid):
     if mid in mc:
         return mc[mid]
     else:
-        model = model_collection().find_one({"_id": UUID(mid), "status": "ready"})
+        model = model_collection().find_one({"_id": UUID(mid),
+                                             "status": "ready"})
         if model is None:
             return None
         else:
@@ -67,22 +73,24 @@ def model_cache_find(mid):
             cached = {"name": model["name"], "w2v": w2v}
             mc[mid] = cached
             return cached
-            
+
 
 def create_training_model(trainingModel) -> str:
-    job = { "urls": trainingModel["urls"], "_id": uuid4(),
-            "name": trainingModel["name"], "status": "training",
-            "callback": trainingModel["callback"] }
+    job = {"urls": trainingModel["urls"], "_id": uuid4(),
+           "name": trainingModel["name"], "status": "training",
+           "callback": trainingModel["callback"]}
     (model_collection()).insert_one(job)
     options()["train_queue"].put(job)
-    url = url_for(".controllers_default_controller_find_training_model", id=job["_id"])
+    url = url_for(".controllers_default_controller_find_training_model",
+                  id=job["_id"])
 
     return(redirect(url))
 
 
 def delete_training_model(id) -> str:
     model_collection().delete_one({"_id": UUID(id)})
-    return(redirect(url_for(".controllers_default_controller_get_training_models")))
+    route = ".controllers_default_controller_get_training_models"
+    return(redirect(url_for(route)))
 
 
 def find_training_model(id) -> str:
@@ -90,14 +98,18 @@ def find_training_model(id) -> str:
     if model is None:
         return make_response(("can't find model with ID %r" % id, 404, []))
     else:
-        result = dict([(k,model[k]) for k in ["_id", "name", "urls", "status"]])
-        return jsonify(result)
+        m = dict([(k, model[k]) for k in ["_id", "name", "urls", "status"]])
+        return jsonify(m)
 
 
 def get_training_models() -> str:
     models = model_collection().find()
-    result = [dict([(k,m[k]) for k in ["_id", "name", "urls", "status"]]) for m in models]
-    return jsonify(result)
+    ms = [
+        dict([(k, m[k]) for k in ["_id", "name", "urls", "status"]])
+        for m in models
+    ]
+
+    return jsonify(ms)
 
 
 def create_query(newQuery) -> str:
@@ -105,16 +117,18 @@ def create_query(newQuery) -> str:
     word = newQuery["word"]
     model = model_cache_find(mid)
     if model is None:
-        return make_response(("no trained model with ID %r available; check /models to see when one is ready" % mid, 404, []))
+        msg = ("no trained model with ID %r available; " % mid) + \
+              "check /models to see when one is ready"
+        return make_response((msg, 404, []))
     else:
         # XXX
         w2v = model["w2v"]
         qid = uuid4()
         syns = w2v.findSynonyms(word, 5)
-        q = { "_id": qid, "word": word, "results": syns }
+        q = {"_id": qid, "word": word, "results": syns}
         (query_collection()).insert_one(q)
-        return redirect(url_for(".controllers_default_controller_find_query", id=str(qid)))
-        
+        route = ".controllers_default_controller_find_query"
+        return redirect(url_for(route, id=str(qid)))
 
 
 def find_query(id) -> str:

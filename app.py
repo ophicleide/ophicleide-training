@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     master = "local[*]"
     dburl = "mongodb://localhost"
-    
+
     options()["spark_master"] = master
     options()["db_url"] = dburl
     options()["train_queue"] = train_q

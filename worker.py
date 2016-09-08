@@ -51,7 +51,8 @@ def workloop(master, inq, outq, dburl):
         mid = job["_id"]
         model = train(sc, urls)
 
-        words, vecs = zip(*[(w, list(v)) for w, v in model.getVectors().items()])
+        items = model.getVectors().items()
+        words, vecs = zip(*[(w, list(v)) for w, v in items])
 
         # XXX: do something with callback here
 
@@ -64,7 +65,12 @@ def workloop(master, inq, outq, dburl):
             zns = zlib.compress(ns, 9)
 
             print("len(ns) == %d; len(zns) == %d" % (len(ns), len(zns)))
-            
-            db.models.update_one({"_id": mid}, {"$set": {"status": "ready", "model": {"words": list(words), "zndvecs": zns}}, "$currentDate": {"last_updated": True}})
+
+            db.models.update_one(
+                {"_id": mid},
+                {"$set": {"status": "ready",
+                          "model": {"words": list(words), "zndvecs": zns}},
+                 "$currentDate": {"last_updated": True}}
+            )
 
         outq.put((mid, job["name"]))
