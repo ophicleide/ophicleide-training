@@ -6,14 +6,43 @@ from flask.json import jsonify
 import pymongo
 from bson.objectid import ObjectId
 
-from numpy import ndarray
+from numpy import ndarray, array, matmul
 from numpy.linalg import norm
 from pickle import loads as pls
 import zlib
 
+import heapq
+
 from __main__ import options
 
 mc = {}
+
+class LocalW2VModel(object):
+    def __init__(self, ws, vs):
+        self.words = ws
+        self.indices = dict(zip(ws, range(len(ws))))
+        self.mat = vs
+        self.norms = array([norm(v) for v in vs])
+        
+    def hasWord(self, word):
+        return self.indices.has_key(word)
+    
+    def findSynonyms(self, word_or_vec, count):
+        if type(word_or_vec) is str:
+            vec = self.mat[self.indices[word_or_vec]]
+        else:
+            vec = word_or_vec
+            
+        vnorm = norm(vec)
+        if vnorm != 0.0:
+            vec = vec * (1 / vnorm)
+
+        
+        simvec = (matmul(self.mat, vec) / self.norms)
+        similarities = list(zip(simvec, self.words))
+        heapq.heapify(similarities)
+        
+        return heapq.nlargest(count + 1, similarities)[1:]
 
 def model_collection():
     dburl = options()["db_url"]
@@ -33,10 +62,10 @@ def model_cache_find(mid):
         if model is None:
             return None
         else:
-            vecs = pls(zlib.decompress(model["zndvecs"]))
-            norms = ndarray([norm(v) for v in vecs])
-            
-            cached = {"name": model["name"], "words": dict(zip(model["words"], range(len(model["words"])))), "indices": model["words"], "vecs": vecs, "norms": norms}
+            m = model["model"]
+            vecs = pls(zlib.decompress(m["zndvecs"]))
+            w2v = LocalW2VModel(m["words"], vecs)
+            cached = {"name": model["name"], "w2v": w2v}
             mc[mid] = cached
             return cached
             
@@ -80,15 +109,23 @@ def create_query(newQuery) -> str:
         return make_response(("no trained model with ID %r available; check /models to see when one is ready" % mid, 404, []))
     else:
         # XXX
-        return 'XXX do some magic'
+        w2v = model["w2v"]
+        qid = uuid4()
+        syns = w2v.findSynonyms(word, 5)
+        q = { "_id": qid, "word": word, "results": syns }
+        (query_collection()).insert_one(q)
+        return redirect(url_for(".controllers_default_controller_find_query", id=str(qid)))
+        
 
 
 def find_query(id) -> str:
-    return 'do some magic!'
+    result = query_collection().find_one({"_id": UUID(id)})
+    return jsonify(result)
 
 
 def get_queries() -> str:
-    return 'do some magic!'
+    queries = query_collection().find()
+    return jsonify(queries)
 
 
 def get_server_info() -> str:
