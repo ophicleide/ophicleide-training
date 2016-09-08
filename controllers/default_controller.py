@@ -36,13 +36,12 @@ class LocalW2VModel(object):
         vnorm = norm(vec)
         if vnorm != 0.0:
             vec = vec * (1 / vnorm)
-
         
         simvec = (matmul(self.mat, vec) / self.norms)
         similarities = list(zip(simvec, self.words))
         heapq.heapify(similarities)
         
-        return heapq.nlargest(count + 1, similarities)[1:]
+        return [(s, w) for s, w in heapq.nlargest(count + 1, similarities) if w != word_or_vec][:count]
 
 def model_collection():
     dburl = options()["db_url"]
