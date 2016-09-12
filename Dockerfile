@@ -1,4 +1,4 @@
-FROM elmiko/openshift-spark
+FROM radanalyticsio/openshift-spark
 
 USER root
 
