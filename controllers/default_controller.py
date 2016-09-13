@@ -39,8 +39,13 @@ class LocalW2VModel(object):
             vec = vec * (1 / vnorm)
 
         simvec = (matmul(self.mat, vec) / self.norms)
-        similarities = list(zip(simvec, self.words))
-        heapq.heapify(similarities)
+        similarities = []
+
+        for tup in zip(simvec, self.words):
+            if len(similarities) < count + 1:
+                heapq.heappush(similarities, tup)
+            else:
+                heapq.heappushpop(similarities, tup)
 
         return [(s, w)
                 for s, w in heapq.nlargest(count + 1, similarities)
