@@ -113,9 +113,7 @@ def get_training_models() -> str:
         dict([(k, m[k]) for k in ["_id", "name", "urls", "status"]])
         for m in models
     ]
-
     ret = {'models': ms}
-
     return jsonify(ret)
 
 
