@@ -113,8 +113,8 @@ def get_training_models() -> str:
         dict([(k, m[k]) for k in ["_id", "name", "urls", "status"]])
         for m in models
     ]
-
-    return jsonify(ms)
+    ret = {'models': ms}
+    return jsonify(ret)
 
 
 def create_query(newQuery) -> str:
