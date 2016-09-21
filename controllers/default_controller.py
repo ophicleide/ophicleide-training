@@ -142,8 +142,9 @@ def find_query(id) -> str:
 
 
 def get_queries() -> str:
-    queries = query_collection().find()
-    return jsonify(queries)
+    queries = [q for q in query_collection().find()]
+    ret = {'queries': queries}
+    return jsonify(ret)
 
 
 def get_server_info() -> str:
