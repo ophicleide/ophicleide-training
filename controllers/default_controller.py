@@ -80,22 +80,31 @@ def model_cache_find(mid):
             return cached
 
 
+def sanitize_model(m):
+    result = dict([(k, m[k]) for k in ["_id", "name", "urls", "status"]])
+    result["id"] = result.pop("_id")
+    return result
+
+
 def create_training_model(trainingModel) -> str:
     job = {"urls": trainingModel["urls"], "_id": uuid4(),
            "name": trainingModel["name"], "status": "training",
            "callback": trainingModel["callback"]}
     (model_collection()).insert_one(job)
     options()["train_queue"].put(job)
-    url = url_for(".controllers_default_controller_find_training_model",
+    location = url_for(".controllers_default_controller_find_training_model",
                   id=job["_id"])
 
-    return(redirect(url))
+    response = jsonify(sanitize_model(job))
+    response.status_code = 201
+    response.headers.add("Location", location)
+
+    return response
 
 
 def delete_training_model(id) -> str:
     model_collection().delete_one({"_id": UUID(id)})
-    route = ".controllers_default_controller_get_training_models"
-    return(redirect(url_for(route)))
+    return("", 204)
 
 
 def find_training_model(id) -> str:
@@ -103,18 +112,23 @@ def find_training_model(id) -> str:
     if model is None:
         return make_response(("can't find model with ID %r" % id, 404, []))
     else:
-        m = dict([(k, model[k]) for k in ["_id", "name", "urls", "status"]])
-        return jsonify(m)
+        return jsonify({'model' : sanitize_model(model)})
 
 
 def get_training_models() -> str:
     models = model_collection().find()
     ms = [
-        dict([(k, m[k]) for k in ["_id", "name", "urls", "status"]])
+        sanitize_model(m)
         for m in models
     ]
     ret = {'models': ms}
     return jsonify(ret)
+
+
+def sanitize_query(q):
+    result = dict([(k, v) for (k, v) in q.items()])
+    result["id"] = result.pop("_id")
+    return result
 
 
 def create_query(newQuery) -> str:
@@ -133,16 +147,20 @@ def create_query(newQuery) -> str:
         q = {"_id": qid, "word": word, "results": syns}
         (query_collection()).insert_one(q)
         route = ".controllers_default_controller_find_query"
-        return redirect(url_for(route, id=str(qid)))
+        location = url_for(route, id=str(qid))
+        response =  jsonify({'query': sanitize_query(q)})
+        response.status_code = 201
+        response.headers.add("Location", location)
+        return response
 
 
 def find_query(id) -> str:
-    result = query_collection().find_one({"_id": UUID(id)})
-    return jsonify(result)
+    q = query_collection().find_one({"_id": UUID(id)})
+    return jsonify({'query': sanitize_query(q)})
 
 
 def get_queries() -> str:
-    queries = [q for q in query_collection().find()]
+    queries = [sanitize_query(q) for q in query_collection().find()]
     ret = {'queries': queries}
     return jsonify(ret)
 
