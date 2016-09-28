@@ -143,15 +143,18 @@ def create_query(newQuery) -> str:
         # XXX
         w2v = model["w2v"]
         qid = uuid4()
-        syns = w2v.findSynonyms(word, 5)
-        q = {"_id": qid, "word": word, "results": syns}
-        (query_collection()).insert_one(q)
-        route = ".controllers_default_controller_find_query"
-        location = url_for(route, id=str(qid))
-        response =  jsonify({'query': sanitize_query(q)})
-        response.status_code = 201
-        response.headers.add("Location", location)
-        return response
+        try:
+            syns = w2v.findSynonyms(word, 5)
+            q = {"_id": qid, "word": word, "results": syns}
+            (query_collection()).insert_one(q)
+            route = ".controllers_default_controller_find_query"
+            location = url_for(route, id=str(qid))
+            response =  jsonify({'query': sanitize_query(q)})
+            response.status_code = 201
+            response.headers.add("Location", location)
+            return response
+        except KeyError:
+            return make_response(("'%s' isn't even in my vocabulary!" % word, 400, []))
 
 
 def find_query(id) -> str:
