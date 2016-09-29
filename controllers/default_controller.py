@@ -110,7 +110,7 @@ def delete_training_model(id) -> str:
 def find_training_model(id) -> str:
     model = model_collection().find_one({"_id": UUID(id)})
     if model is None:
-        return make_response(("can't find model with ID %r" % id, 404, []))
+        return json_error("Not Found", 404, "can't find model with ID %r" % id, 404)
     else:
         return jsonify({'model' : sanitize_model(model)})
 
@@ -131,6 +131,13 @@ def sanitize_query(q):
     return result
 
 
+def json_error(title, status, details):
+    error = { "title" : title, "status" : status, "details" : details }
+    response = jsonify({ "errors" : [ error ] })
+    response.status_code = status
+    return response
+
+
 def create_query(newQuery) -> str:
     mid = newQuery["model"]
     word = newQuery["word"]
@@ -138,20 +145,23 @@ def create_query(newQuery) -> str:
     if model is None:
         msg = ("no trained model with ID %r available; " % mid) + \
               "check /models to see when one is ready"
-        return make_response((msg, 404, []))
+        return json_error("Not Found", 404, msg)
     else:
         # XXX
         w2v = model["w2v"]
         qid = uuid4()
-        syns = w2v.findSynonyms(word, 5)
-        q = {"_id": qid, "word": word, "results": syns}
-        (query_collection()).insert_one(q)
-        route = ".controllers_default_controller_find_query"
-        location = url_for(route, id=str(qid))
-        response =  jsonify({'query': sanitize_query(q)})
-        response.status_code = 201
-        response.headers.add("Location", location)
-        return response
+        try:
+            syns = w2v.findSynonyms(word, 5)
+            q = {"_id": qid, "word": word, "results": syns}
+            (query_collection()).insert_one(q)
+            route = ".controllers_default_controller_find_query"
+            location = url_for(route, id=str(qid))
+            response = jsonify({'query': sanitize_query(q)})
+            response.status_code = 201
+            response.headers.add("Location", location)
+            return response
+        except KeyError:
+            return json_error("Bad Request", 400, "'%s' isn't even in my vocabulary!" % word)
 
 
 def find_query(id) -> str:
