@@ -195,6 +195,7 @@ paths:
                 id: "214b0c0c-8d1c-4782-b590-512a915251b9"
                 word: "darcy"
                 model: "0ebf527c-9c54-43f3-89b5-abbc89b2f43b"
+                modelName: "austen"
                 results:
                 - word: "collins"
                   quality: 0.9056707521507696423412880903924815356731414794921875
@@ -233,6 +234,7 @@ paths:
                 id: "214b0c0c-8d1c-4782-b590-512a915251b9"
                 word: "darcy"
                 model: "0ebf527c-9c54-43f3-89b5-abbc89b2f43b"
+                modelName: "austen"
                 results:
                 - word: "collins"
                   quality: 0.9056707521507696423412880903924815356731414794921875
