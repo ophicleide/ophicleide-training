@@ -128,6 +128,13 @@ def get_training_models() -> str:
 def sanitize_query(q):
     result = dict([(k, v) for (k, v) in q.items()])
     result["id"] = result.pop("_id")
+
+    if not "modelName" in result:
+        result["modelName"] = "UNKNOWN"
+
+    if not "model" in result:
+        result["model"] = "UNKNOWN"
+
     return result
 
 
@@ -152,7 +159,10 @@ def create_query(newQuery) -> str:
         qid = uuid4()
         try:
             syns = w2v.findSynonyms(word, 5)
-            q = {"_id": qid, "word": word, "results": syns}
+            q = {
+                "_id": qid, "word": word, "results": syns,
+                 "modelName": model["name"], "model": mid
+            }
             (query_collection()).insert_one(q)
             route = ".controllers_default_controller_find_query"
             location = url_for(route, id=str(qid))
