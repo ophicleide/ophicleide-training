@@ -9,4 +9,6 @@ RUN yum install -y centos-release-scl epel-release gcc \
     && yum install -y rh-python35  \
     && scl enable rh-python35 "pip install -r /opt/ophicleide/requirements.txt"
 
+USER 185
+
 CMD cd /opt/ophicleide && scl enable rh-python35 ./run.sh
