@@ -24,4 +24,4 @@ fi
 export OPH_DBURL=$OPH_MONGO_URL
 export OPH_MASTER=$OPH_SPARK_MASTER_URL
 
-exec spark-submit --master $OPH_MASTER ./app.py
+exec spark-submit --master $OPH_MASTER --py-files worker.py ./app.py
