@@ -2,17 +2,14 @@ from pyspark import SparkConf
 from pyspark import SparkContext
 from pyspark.mllib.feature import Word2Vec
 
-import re
-
-from urllib.request import urlopen
-
 from functools import reduce
-
-import pymongo
-
+import re
+import urllib2
 import zlib
 
 from numpy import ndarray
+import pymongo
+from bson.binary import Binary
 
 
 def cleanstr(s):
@@ -22,9 +19,9 @@ def cleanstr(s):
 
 
 def url2rdd(sc, url):
-    response = urlopen(url)
-    corpus_bytes = response.read()
-    text = str(corpus_bytes).replace("\\r", "\r").replace("\\n", "\n")
+    response = urllib2.urlopen(url)
+    corpus = response.read()
+    text = corpus.replace("\\r", "\r").replace("\\n", "\n")
     rdd = sc.parallelize(text.split("\r\n\r\n"))
     rdd.map(lambda l: l.replace("\r\n", " ").split(" "))
     return rdd.map(lambda l: cleanstr(l).split(" "))
@@ -69,7 +66,7 @@ def workloop(master, inq, outq, dburl):
             db.models.update_one(
                 {"_id": mid},
                 {"$set": {"status": "ready",
-                          "model": {"words": list(words), "zndvecs": zns}},
+                          "model": {"words": list(words), "zndvecs": Binary(zns)}},
                  "$currentDate": {"last_updated": True}}
             )
 

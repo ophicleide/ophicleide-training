@@ -6,7 +6,7 @@ from flask.json import jsonify
 import pymongo
 from bson.objectid import ObjectId
 
-from numpy import ndarray, array, matmul
+from numpy import ndarray, array, dot
 from numpy.linalg import norm
 from pickle import loads as pls
 import zlib
@@ -29,7 +29,7 @@ class LocalW2VModel(object):
         return word in self.indices
 
     def findSynonyms(self, word_or_vec, count):
-        if type(word_or_vec) is str:
+        if isinstance(word_or_vec, str) or isinstance(word_or_vec, unicode):
             vec = self.mat[self.indices[word_or_vec]]
         else:
             vec = word_or_vec
@@ -38,7 +38,7 @@ class LocalW2VModel(object):
         if vnorm != 0.0:
             vec = vec * (1 / vnorm)
 
-        simvec = (matmul(self.mat, vec) / self.norms)
+        simvec = (dot(self.mat, vec) / self.norms)
         similarities = []
 
         for tup in zip(simvec, self.words):
@@ -86,7 +86,7 @@ def sanitize_model(m):
     return result
 
 
-def create_training_model(trainingModel) -> str:
+def create_training_model(trainingModel):
     job = {"urls": trainingModel["urls"], "_id": uuid4(),
            "name": trainingModel["name"], "status": "training",
            "callback": trainingModel["callback"]}
@@ -102,12 +102,12 @@ def create_training_model(trainingModel) -> str:
     return response
 
 
-def delete_training_model(id) -> str:
+def delete_training_model(id):
     model_collection().delete_one({"_id": UUID(id)})
     return("", 204)
 
 
-def find_training_model(id) -> str:
+def find_training_model(id):
     model = model_collection().find_one({"_id": UUID(id)})
     if model is None:
         return json_error("Not Found", 404, "can't find model with ID %r" % id, 404)
@@ -115,7 +115,7 @@ def find_training_model(id) -> str:
         return jsonify({'model' : sanitize_model(model)})
 
 
-def get_training_models() -> str:
+def get_training_models():
     models = model_collection().find()
     ms = [
         sanitize_model(m)
@@ -145,7 +145,7 @@ def json_error(title, status, details):
     return response
 
 
-def create_query(newQuery) -> str:
+def create_query(newQuery):
     mid = newQuery["model"]
     word = newQuery["word"]
     model = model_cache_find(mid)
@@ -174,18 +174,18 @@ def create_query(newQuery) -> str:
             return json_error("Bad Request", 400, "'%s' isn't even in my vocabulary!" % word)
 
 
-def find_query(id) -> str:
+def find_query(id):
     q = query_collection().find_one({"_id": UUID(id)})
     return jsonify({'query': sanitize_query(q)})
 
 
-def get_queries() -> str:
+def get_queries():
     queries = [sanitize_query(q) for q in query_collection().find()]
     ret = {'queries': queries}
     return jsonify(ret)
 
 
-def get_server_info() -> str:
+def get_server_info():
     tqlen = (options()["train_queue"]).qsize()
     info = {"training_queue_len": tqlen}
     return jsonify(name="ophicleide", version="0.0.0", info=info)

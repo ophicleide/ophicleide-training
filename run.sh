@@ -1,4 +1,4 @@
-export PYSPARK_PYTHON=python3
+# export PYSPARK_PYTHON=python3
 
 # spark likes to be able to lookup a username for the running UID, if
 # no name is present fake it.
@@ -24,4 +24,4 @@ fi
 export OPH_DBURL=$OPH_MONGO_URL
 export OPH_MASTER=$OPH_SPARK_MASTER_URL
 
-exec spark-submit --master $OPH_MASTER --py-files worker.py ./app.py
+exec spark-submit --master $OPH_MASTER --py-files pymongo.zip,worker.py ./app.py

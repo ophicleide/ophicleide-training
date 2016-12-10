@@ -4,11 +4,13 @@ USER root
 
 ADD . /opt/ophicleide
 
-RUN yum install -y centos-release-scl epel-release gcc \
-    && yum-config-manager --enable rhel-server-rhscl-7-rpms \
-    && yum install -y rh-python35  \
-    && scl enable rh-python35 "pip install -r /opt/ophicleide/requirements.txt"
+WORKDIR /opt/ophicleide
+
+RUN yum install -y python-pip \
+ && pip install -r requirements.txt \
+ && pip wheel -r wheel-requirements.txt -w . \
+ && mv pymongo*.whl pymongo.zip
 
 USER 185
 
-CMD cd /opt/ophicleide && scl enable rh-python35 ./run.sh
+CMD ./run.sh
