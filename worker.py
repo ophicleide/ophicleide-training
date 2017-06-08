@@ -66,7 +66,8 @@ def workloop(master, inq, outq, dburl):
             db.models.update_one(
                 {"_id": mid},
                 {"$set": {"status": "ready",
-                          "model": {"words": list(words), "zndvecs": Binary(zns)}},
+                          "model": {"words": list(words),
+                                    "zndvecs": Binary(zns)}},
                  "$currentDate": {"last_updated": True}}
             )
 

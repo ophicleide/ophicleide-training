@@ -13,7 +13,7 @@ import zlib
 
 import heapq
 
-from __main__ import options
+import conf
 
 mc = {}
 
@@ -53,12 +53,12 @@ class LocalW2VModel(object):
 
 
 def model_collection():
-    dburl = options()["db_url"]
+    dburl = conf.options()["db_url"]
     return pymongo.MongoClient(dburl).ophicleide.models
 
 
 def query_collection():
-    dburl = options()["db_url"]
+    dburl = conf.options()["db_url"]
     return pymongo.MongoClient(dburl).ophicleide.queries
 
 
@@ -91,9 +91,9 @@ def create_training_model(trainingModel):
            "name": trainingModel["name"], "status": "training",
            "callback": trainingModel["callback"]}
     (model_collection()).insert_one(job)
-    options()["train_queue"].put(job)
+    conf.options()["train_queue"].put(job)
     location = url_for(".controllers_default_controller_find_training_model",
-                  id=job["_id"])
+                       id=job["_id"])
 
     response = jsonify(sanitize_model(job))
     response.status_code = 201
@@ -110,9 +110,9 @@ def delete_training_model(id):
 def find_training_model(id):
     model = model_collection().find_one({"_id": UUID(id)})
     if model is None:
-        return json_error("Not Found", 404, "can't find model with ID %r" % id, 404)
+        return json_error("Not Found", 404, "can't find model with ID %r" % id)
     else:
-        return jsonify({'model' : sanitize_model(model)})
+        return jsonify({'model': sanitize_model(model)})
 
 
 def get_training_models():
@@ -139,8 +139,8 @@ def sanitize_query(q):
 
 
 def json_error(title, status, details):
-    error = { "title" : title, "status" : status, "details" : details }
-    response = jsonify({ "errors" : [ error ] })
+    error = {"title": title, "status": status, "details": details}
+    response = jsonify({"errors": [error]})
     response.status_code = status
     return response
 
@@ -161,7 +161,7 @@ def create_query(newQuery):
             syns = w2v.findSynonyms(word, 5)
             q = {
                 "_id": qid, "word": word, "results": syns,
-                 "modelName": model["name"], "model": mid
+                "modelName": model["name"], "model": mid
             }
             (query_collection()).insert_one(q)
             route = ".controllers_default_controller_find_query"
@@ -171,7 +171,8 @@ def create_query(newQuery):
             response.headers.add("Location", location)
             return response
         except KeyError:
-            return json_error("Bad Request", 400, "'%s' isn't even in my vocabulary!" % word)
+            return json_error("Bad Request", 400,
+                              "'%s' isn't even in my vocabulary!" % word)
 
 
 def find_query(id):
@@ -186,6 +187,6 @@ def get_queries():
 
 
 def get_server_info():
-    tqlen = (options()["train_queue"]).qsize()
+    tqlen = (conf.options()["train_queue"]).qsize()
     info = {"training_queue_len": tqlen}
     return jsonify(name="ophicleide", version="0.0.0", info=info)
