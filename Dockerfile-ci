@@ -1,0 +1,11 @@
+FROM dsoukhov/python-tox-radanalytics.ci
+
+ADD . /opt/ophicleide
+WORKDIR /opt/ophicleide
+
+RUN pip install -r requirements.txt \
+ && pip wheel -r wheel-requirements.txt -w . \
+ && mv pymongo*.whl pymongo.zip \
+ && pip install -r requirements-tests.txt
+
+RUN tox
