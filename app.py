@@ -7,14 +7,6 @@ from worker import workloop
 from os import environ
 import conf
 
-optionsDict = {}
-
-
-def options():
-    global optionsDict
-    return optionsDict
-
-
 if __name__ == '__main__':
     train_q = Queue()
     result_q = Queue()
