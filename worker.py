@@ -33,6 +33,38 @@ def train(sc, urls):
     return w2v.fit(rdds)
 
 
+def update_model(sc, inq, outq, db, dburl):
+    job = inq.get()
+    urls = job["urls"]
+    mid = job["_id"]
+    model = train(sc, urls)
+
+    items = model.getVectors().items()
+    words, vecs = zip(*[(w, list(v)) for w, v in items])
+
+    # XXX: do something with callback here
+
+    if dburl is not None:
+        ndvecs = ndarray([len(words), len(vecs[0])])
+        for i in range(len(vecs)):
+            ndvecs[i] = vecs[i]
+
+        ns = ndvecs.dumps()
+        zns = zlib.compress(ns, 9)
+
+        print("len(ns) == %d; len(zns) == %d" % (len(ns), len(zns)))
+
+        db.models.update_one(
+            {"_id": mid},
+            {"$set": {"status": "ready",
+                      "model": {"words": list(words),
+                                "zndvecs": Binary(zns)}},
+             "$currentDate": {"last_updated": True}}
+        )
+
+    outq.put((mid, job["name"]))
+
+
 def workloop(master, inq, outq, dburl):
     sconf = SparkConf().setAppName("ophicleide-worker").setMaster(master)
     sc = SparkContext(conf=sconf)
@@ -43,32 +75,4 @@ def workloop(master, inq, outq, dburl):
     outq.put("ready")
 
     while True:
-        job = inq.get()
-        urls = job["urls"]
-        mid = job["_id"]
-        model = train(sc, urls)
-
-        items = model.getVectors().items()
-        words, vecs = zip(*[(w, list(v)) for w, v in items])
-
-        # XXX: do something with callback here
-
-        if dburl is not None:
-            ndvecs = ndarray([len(words), len(vecs[0])])
-            for i in range(len(vecs)):
-                ndvecs[i] = vecs[i]
-
-            ns = ndvecs.dumps()
-            zns = zlib.compress(ns, 9)
-
-            print("len(ns) == %d; len(zns) == %d" % (len(ns), len(zns)))
-
-            db.models.update_one(
-                {"_id": mid},
-                {"$set": {"status": "ready",
-                          "model": {"words": list(words),
-                                    "zndvecs": Binary(zns)}},
-                 "$currentDate": {"last_updated": True}}
-            )
-
-        outq.put((mid, job["name"]))
+        update_model(sc, inq, outq, db, dburl)
