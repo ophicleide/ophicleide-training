@@ -1,0 +1,15 @@
+FROM analyticsci/python-tox-radanalytics.ci
+
+ADD . /opt/ophicleide
+WORKDIR /opt/ophicleide
+
+RUN pip install -r requirements.txt \
+ && pip wheel -r wheel-requirements.txt -w . \
+ && mv pymongo*.whl pymongo.zip \
+ && pip install -r requirements-tests.txt \
+ && pip install -e  $SPARK_HOME/python/
+
+ENV PYTHONPATH=$SPARK_HOME/python:$PYTHONPATH
+
+RUN export PYTHONPATH=$PYTHONPATH:$(ls $SPARK_HOME/python/lib/py4j*.zip | head -1) \
+ && tox

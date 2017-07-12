@@ -5,15 +5,7 @@ from multiprocessing import Process, Queue
 
 from worker import workloop
 from os import environ
-
-
-optionsDict = {}
-
-
-def options():
-    global optionsDict
-    return optionsDict
-
+import conf
 
 if __name__ == '__main__':
     train_q = Queue()
@@ -22,10 +14,7 @@ if __name__ == '__main__':
     master = environ.get("OPH_MASTER", "local[*]")
     dburl = environ.get("OPH_DBURL", "mongodb://localhost")
 
-    options()["spark_master"] = master
-    options()["db_url"] = dburl
-    options()["train_queue"] = train_q
-    options()["result_queue"] = result_q
+    conf.init(master, dburl, train_q, result_q)
 
     p = Process(target=workloop, args=(master, train_q, result_q, dburl))
     p.start()
