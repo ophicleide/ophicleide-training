@@ -1,4 +1,4 @@
-FROM dsoukhov/python-tox-radanalytics.ci
+FROM analyticsci/python-tox-radanalytics.ci
 
 ADD . /opt/ophicleide
 WORKDIR /opt/ophicleide
