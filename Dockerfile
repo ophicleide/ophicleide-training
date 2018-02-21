@@ -6,7 +6,7 @@ ADD . /opt/ophicleide
 
 WORKDIR /opt/ophicleide
 
-RUN yum install -y python-pip \
+RUN easy_install pip \
  && pip install setuptools==36.2.5 \
  && pip install -r requirements.txt \
  && pip wheel -r wheel-requirements.txt -w . \
