@@ -1,4 +1,4 @@
-FROM radanalyticsio/openshift-spark
+FROM radanalyticsio/openshift-spark:2.2-latest
 
 USER root
 
