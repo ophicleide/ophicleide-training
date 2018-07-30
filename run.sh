@@ -21,7 +21,13 @@ if [ -z $OPH_SPARK_MASTER_URL ]; then
     exit 1
 fi
 
+if [ -n "$DRIVER_HOST" ]; then
+    driver_host="--conf spark.driver.host=${DRIVER_HOST}"
+else
+    driver_host=
+fi
+
 export OPH_DBURL=$OPH_MONGO_URL
 export OPH_MASTER=$OPH_SPARK_MASTER_URL
 
-exec spark-submit --master $OPH_MASTER --py-files pymongo.zip,worker.py ./app.py
+exec spark-submit --master $OPH_MASTER $driver_host --py-files pymongo.zip,worker.py ./app.py
