@@ -14,4 +14,4 @@ RUN easy_install pip \
 
 USER 185
 
-CMD ./run.sh
+CMD /opt/ophicleide/run.sh
